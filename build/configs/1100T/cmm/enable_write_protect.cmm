@@ -1,0 +1,51 @@
+;------------------------------
+;  Configuring JTAG interface
+;-----------------------------
+
+AREA.RESet
+AREA.CREATE
+AREA.SELECT
+AREA.VIEW
+
+LOCAL &BASE_DIR
+&DIR=OS.PPD()			; get current dir
+&BASE_DIR="&DIR"
+
+do attach_cr4.cmm
+GOSUB	flash_init
+
+GOSUB	write_protect_enable
+
+print	"done"
+enddo
+;-----------------------------------------
+flash_init:
+	print "Initialize Serial Flash Interface..."
+	;d.s SD:0x80040020 %LE %LONG 0x00222222 ;;GPCON
+	;d.s SD:0x80040028 %LE %LONG 0x00333333 ;;GPPUD
+	d.s SD:0x80310004 %LE %LONG 0x8010061A ;;Disable WP, Disable erase_wait
+	D.S SD:0x80310074 %LE %Long 0
+	D.S SD:0x80310078 %LE %Long 0
+
+	RETURN
+;-----------------------------------------
+write_protect_enable:
+	d.s SD:0x80310004 %LE %LONG 0x8010060A
+
+	d.s SD:0x803100EE %LE %BYTE 0x1
+
+	d.s SD:0x80310018 %LE %LONG 0xFF000000
+
+	d.s SD:0x80310018 %LE %LONG 0x00550000
+	d.s SD:0x80310018 %LE %LONG 0x00550300
+	d.s SD:0x80310018 %LE %LONG 0x0055F000
+	d.s SD:0x80310018 %LE %LONG 0x00553000
+
+	d.s SD:0x80310018 %LE %LONG 0x00550000
+	d.s SD:0x80310018 %LE %LONG 0x0055C000
+
+	d.s SD:0x80310018 %LE %LONG 0xFF000000
+
+	d.s SD:0x80310004 %LE %LONG 0x0010060A
+	
+	RETURN

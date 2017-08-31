@@ -213,20 +213,34 @@ ssize_t up_progmem_write(size_t addr, const void *buf, size_t count)
  * @return	void
  * @note
  */
+
 void s5j_sflash_init(void)
 {
-	s5j_sflash_disable_wp();
+    s5j_sflash_disable_wp();
 
-	modifyreg32(S5J_SFLASH_SFCON, 0, SFLASH_SFCON_ERASE_WAIT_ON);
-	putreg32(SFLASH_PERF_MODE_DUAL_QUAD, S5J_SFLASH_PERF_MODE);
-	putreg32(SFLASH_IO_MODE_QUAD_FAST_READ, S5J_SFLASH_IO_MODE);
+    modifyreg32(S5J_SFLASH_SFCON, 0, SFLASH_SFCON_ERASE_WAIT_ON);
 
-	/* Check FLASH has Quad Enabled */
-	while (!(s5j_sflash_read_status() & (0x1 << 6))) ;
-	lldbg("FLASH Quad Enabled\n");
+    if( (getreg32(S5J_SFLASH_RDID) & 0xFF) == 0xEF )
+    {
+        /* winbond */
+        modifyreg32(S5J_SFLASH_SFCON, SFLASH_SFCON_MEMORY_VENDOR_MASK, SFLASH_SFCON_MEMORY_VENDOR_WINBOND);    
+        putreg32(SFLASH_PERF_MODE_DUAL_QUAD, S5J_SFLASH_PERF_MODE);
+        putreg32(SFLASH_IO_MODE_QUAD_FAST_READ, S5J_SFLASH_IO_MODE);
+    }
+    else
+    {
+        /* macronix (default) */
+        putreg32(SFLASH_PERF_MODE_DUAL_QUAD, S5J_SFLASH_PERF_MODE);
+        putreg32(SFLASH_IO_MODE_QUAD_FAST_READ, S5J_SFLASH_IO_MODE);
+        
+        /* Check FLASH has Quad Enabled */
+        while (!(s5j_sflash_read_status() & (0x1 << 6))) ;
+        lldbg("FLASH Quad Enabled\n");
+    }
 
-	s5j_sflash_enable_wp();
+    s5j_sflash_enable_wp();
 
-	/* Set FLASH clk 80Mhz for Max performance */
-	cal_clk_setrate(d1_serialflash, 80000000);
+    /* Set FLASH clk 80Mhz for Max performance */
+    cal_clk_setrate(d1_serialflash, 80000000);
 }
+

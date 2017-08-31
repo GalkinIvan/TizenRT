@@ -1,0 +1,33 @@
+;------------------------------
+;  Configuring JTAG interface
+;-----------------------------
+
+SYStem.Option ResBreak OFF
+SYStem.Option WaitReset 100.ms
+SYStem.Option EnReset OFF
+SYStem.Option IMASKASM ON
+SYStem.Option IMASKHLL ON
+System.JtagClock 5MHz
+
+print "s5jt200 evt0 jtag start.."
+
+System.CPU CortexR4
+
+Sys.Config.COREBASE 0x801E0000 ; R4
+;Sys.Config.CTIBASE 0x80820000
+
+System.Config AXIACCESSPORT 0.
+System.Config DEBUGACCESSPORT 1.
+System.Config MEMORYACCESSPORT 5.
+
+Sys.attach
+B.Select.Program Onchip
+
+if run()
+	break
+;print "Disable Watchdog Reset"
+d.s SD:0x80030000 %LE %LONG 0x0
+
+wait 0.2s
+
+enddo

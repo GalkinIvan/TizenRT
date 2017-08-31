@@ -1,0 +1,112 @@
+;------------------------------
+;  Configuring JTAG interface
+;-----------------------------
+
+AREA.RESet
+AREA.CREATE
+AREA.SELECT
+AREA.VIEW
+
+LOCAL &BASE_DIR
+&DIR=OS.PPD()			; get current dir
+&BASE_DIR="&DIR"
+GLOBAL &FLASH_BASE &OTA_BOOT_ARG_START &tinyARA_FLASH_START &led_FW_FLASH_START &sss_FW_FLASH_START &wlan_FW_FLASH_START
+
+do attach_cr4.cmm
+do cmu_init.cmm				; Flash Clock init
+GOSUB	enable_region			; Set Memory region for FLASH write
+do partition_map.cmm			; set t20 partition map
+
+&tinyARA_FLASH_FILE="&BASE_DIR\..\..\..\output\bin\tinyara_head.bin"
+;&tinyARA_FLASH_FILE="&BASE_DIR\..\..\..\output\bin\i2s.bin"
+
+GOSUB	flash_init
+
+;flash erase
+GOSUB flash_erase &tinyARA_FLASH_FILE &tinyARA_FLASH_START
+
+;flash images
+GOSUB flash_write &tinyARA_FLASH_FILE &tinyARA_FLASH_START
+
+print "FUSING TINYARA IMAGE at OTA A REGION"
+
+do enable_write_protect.cmm
+
+enddo
+;-----------------------------------------
+flash_init:
+	R.S PC 0x02020000
+	print "Initialize Serial Flash Interface..."
+	d.s SD:0x80040020 %LE %LONG 0x00222222 ;;GPCON
+	d.s SD:0x80040028 %LE %LONG 0x00333333 ;;GPPUD
+	d.s SD:0x80310004 %LE %LONG 0x8010000A ;;Disable WP
+	RETURN
+;-----------------------------------------
+flash_write:
+	ENTRY &file &fstart
+	d.load.b &file &fstart
+	RETURN
+;-----------------------------------------
+flash_erase:
+	ENTRY &file &fstart
+	LOCAL &temp &write_size &target_addr &end_addr
+	&write_size=OS.FILE.SIZE(&file)
+	&target_addr=&fstart-&FLASH_BASE
+	&end_addr=&target_addr+&write_size
+	print "Logical Flash Address :0x" &target_addr
+	print "Memory Map in Flash Addr 0x" &fstart
+	while &target_addr<&end_addr
+	(
+		d.s SD:0x80310010 %LE %LONG &target_addr ;;Erase Address(base 0x0 -- mapped 0x0400_0000)
+		d.s SD:0x8031005E %BYTE 0xFF ;;Sector Erase
+		print "Erase Flash :0x" &target_addr
+		&target_addr=&target_addr+0x1000
+		GOSUB flash_erase_wait
+	)
+	&temp=DATA.LONG(SD:0x803100AC)
+	RETURN
+;-----------------------------------------
+enable_region:
+	PER.S.SI C15:0x26 %L 0x0 0x0 C15:0x16 %Long 0x0		;Region 0 off
+	PER.S.SI C15:0x26 %L 0x0 0x0 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x1 0x1 C15:0x16 %Long 0x1		;Region 1 off
+	PER.S.SI C15:0x26 %L 0x1 0x1 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x2 0x2 C15:0x16 %Long 0x2		;Region 2 off
+	PER.S.SI C15:0x26 %L 0x2 0x2 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x3 0x3 C15:0x16 %Long 0x3		;Region 3 off
+	PER.S.SI C15:0x26 %L 0x3 0x3 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x4 0x4 C15:0x16 %Long 0x4		;Region 4 off
+	PER.S.SI C15:0x26 %L 0x4 0x4 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x5 0x5 C15:0x16 %Long 0x5		;Region 5 off
+	PER.S.SI C15:0x26 %L 0x5 0x5 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x6 0x6 C15:0x16 %Long 0x6		;Region 6 off
+	PER.S.SI C15:0x26 %L 0x6 0x6 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x7 0x7 C15:0x16 %Long 0x7		;Region 7 off
+	PER.S.SI C15:0x26 %L 0x7 0x7 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x8 0x8 C15:0x16 %Long 0x8		;Region 8 off
+	PER.S.SI C15:0x26 %L 0x8 0x8 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0x9 0x9 C15:0x16 %Long 0x9		;Region 9 off
+	PER.S.SI C15:0x26 %L 0x9 0x9 C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0xA 0xA C15:0x16 %Long 0xA		;Region 10 off
+	PER.S.SI C15:0x26 %L 0xA 0xA C15:0x216 %Long 0x8	;32bytes but disable
+	PER.S.SI C15:0x26 %L 0xB 0xB C15:0x16 %Long 0xB		;Region 11 off
+	PER.S.SI C15:0x26 %L 0xB 0xB C15:0x216 %Long 0x8	;32bytes but disable
+
+	PER.S.SI C15:0x26 %L 0x0 0x0 C15:0x416 %Long 0x300	;strongly ordered, non-shared
+	PER.S.SI C15:0x26 %L 0x0 0x0 C15:0x216 %Long 0x3F	;4GB
+	PER.S.SI C15:0x26 %L 0x0 0x0 C15:0x16 %Long 0x0
+
+	PER.S.SI C15:0x26 %L 0x4 0x4 C15:0x416 %Long 0x310	;device
+	PER.S.SI C15:0x26 %L 0x4 0x4 C15:0x216 %Long 0x31	;32MB
+	PER.S.SI C15:0x26 %L 0x4 0x4 C15:0x16 %Long 0x60000000
+	PER.Set C15:0x1 %Long 0x00e50879			;enable region
+	RETURN
+;-----------------------------------------
+flash_erase_wait:
+	LOCAL &status
+	&status=(DATA.BYTE(SD:0x803100DC)&1)
+	while &status==1
+	(
+		&status=(DATA.BYTE(SD:0x803100DC)&1)
+	)
+	return

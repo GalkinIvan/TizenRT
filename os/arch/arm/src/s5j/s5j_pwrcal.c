@@ -85,6 +85,10 @@ unsigned int cal_clk_is_enabled(unsigned int id)
 #define S5J_CON_DIV_CLK_SPI2 (S5J_CMU_BASE + 0x180C)
 #define S5J_CON_DIV_CLK_SPI3 (S5J_CMU_BASE + 0x1810)
 
+#define S5J_PMU_DEBUG (S5J_PMU_BASE + 0x0A00)
+#define S5J_CMU_CLKOUT0 (S5J_CMU_BASE + 0x0810)
+
+
 int cal_clk_setrate(unsigned int id, unsigned long rate)
 {
 	unsigned long parents;
@@ -197,6 +201,46 @@ int cal_clk_mux(unsigned int id, int val)
 	}
 
 	return 0;
+}
+
+void cal_set_xclkout0(int id, int div)
+{
+	switch (id) {
+	case xclkout0_osc:
+		modifyreg32(S5J_PMU_DEBUG, 0x300, 0x100);
+		modifyreg32(S5J_CMU_CLKOUT0, 0xFFFFFFFF, (0x1<<29) | (0x0<<8) | (div&0xf));
+		break;
+	case xclkout0_xiu_d_t20:
+		modifyreg32(S5J_PMU_DEBUG, 0x300, 0x100);
+		modifyreg32(S5J_CMU_CLKOUT0, 0xFFFFFFFF, (0x1<<29) | (0x1<<8) | (div&0xf));
+		break;
+	case xclkout0_xiu_p_t20:
+		modifyreg32(S5J_PMU_DEBUG, 0x300, 0x100);
+		modifyreg32(S5J_CMU_CLKOUT0, 0xFFFFFFFF, (0x1<<29) | (0x2<<8) | (div&0xf));
+		break;
+	case xclkout0_uart0:
+		modifyreg32(S5J_PMU_DEBUG, 0x300, 0x100);
+		modifyreg32(S5J_CMU_CLKOUT0, 0xFFFFFFFF, (0x1<<29) | (0x3<<8) | (div&0xf));
+		break;
+	case xclkout0_uart1:
+		modifyreg32(S5J_PMU_DEBUG, 0x300, 0x100);
+		modifyreg32(S5J_CMU_CLKOUT0, 0xFFFFFFFF, (0x1<<29) | (0x4<<8) | (div&0xf));
+		break;
+	case xclkout0_uart2:
+		modifyreg32(S5J_PMU_DEBUG, 0x300, 0x100);
+		modifyreg32(S5J_CMU_CLKOUT0, 0xFFFFFFFF, (0x1<<29) | (0x5<<8) | (div&0xf));
+		break;
+	case xclkout0_uart3:
+		modifyreg32(S5J_PMU_DEBUG, 0x300, 0x100);
+		modifyreg32(S5J_CMU_CLKOUT0, 0xFFFFFFFF, (0x1<<29) | (0x6<<8) | (div&0xf));
+		break;
+	case xclkout0_uartDBG:
+		modifyreg32(S5J_PMU_DEBUG, 0x300, 0x100);
+		modifyreg32(S5J_CMU_CLKOUT0, 0xFFFFFFFF, (0x1<<29) | (0x7<<8) | (div&0xf));
+		break;
+	default:
+		break;
+	}
 }
 
 int cal_init(void)

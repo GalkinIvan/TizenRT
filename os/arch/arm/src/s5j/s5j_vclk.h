@@ -99,7 +99,27 @@ enum {
 	i2s_mux = 0x0A080000,
 	i2s_bclk,
 	i2s_osc,
+	
+	xclkout0_osc = 0x0A090000,
+	xclkout0_xiu_d_t20,
+	xclkout0_xiu_p_t20,
+	xclkout0_uart0,
+	xclkout0_uart1,
+	xclkout0_uart2,
+	xclkout0_uart3,
+	xclkout0_uartDBG,
+
 };
+
+
+int cal_clk_setrate(unsigned int id, unsigned long rate);
+unsigned long cal_clk_getrate(unsigned int id);
+int cal_clk_enable(unsigned int id);
+int cal_clk_disable(unsigned int id);
+int cal_clk_mux(unsigned int id, int val);
+void cal_set_xclkout0(int id, int div);
+int cal_init(void);
+
 
 #define S5J_DEFAULT_I2C_CLOCK	(160 * 1000 * 1000)
 #define S5J_DEFAULT_UART_CLOCK	(26 * 1000 * 1000)

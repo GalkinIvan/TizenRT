@@ -1,0 +1,40 @@
+;------------------------------
+;  Configuring JTAG interface
+;-----------------------------
+
+AREA.RESet
+AREA.CREATE
+AREA.SELECT
+AREA.VIEW
+
+LOCAL &BASE_DIR
+&DIR=OS.PPD()			; get curre nt dir
+&BASE_DIR="&DIR"
+
+ENTRY &image_file &image_size &dest_addr
+
+SYStem.Option ResBreak OFF
+SYStem.Option WaitReset 100.ms 
+SYStem.Option EnReset OFF
+SYStem.Option IMASKASM ON
+SYStem.Option IMASKHLL ON
+System.JtagClock 5Mhz
+
+print "s5jt200 evt0 jtag start.."
+
+System.CPU CortexR4
+
+Sys.Config.COREBASE 0x80030000 ; R4
+;Sys.Config.CTIBASE 0x80820000
+
+System.Config AXIACCESSPORT 0.
+System.Config DEBUGACCESSPORT 17.
+System.Config MEMORYACCESSPORT 1.
+SYSTEM.CPUACCESS ENABLE
+system.memaccess        DAP
+
+Sys.attach
+wait 0.2s
+;Sys.attach
+;d.load "D:\VirtualShared\tinyara\build\bin\tinyara" /nocode /PlusVM /strippart "\tinyara" /SOURCEPATH "D:\VirtualShared\tinyara"
+print "ready"

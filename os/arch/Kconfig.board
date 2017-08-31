@@ -19,6 +19,14 @@ config ARCH_BOARD_ARTIK053
 	---help---
 		Samsung ARTIK-053 Starter Kit based on S5JT200 IoT WiFi MCU
 
+config ARCH_BOARD_1100T
+	bool "1100T board"
+	depends on ARCH_CHIP_S5JT200
+	select SAMSUNG_NS2
+	---help---
+		1100T board based on S5JT200 IoT WiFi MCU plus ES8388 audio codec
+
+
 config ARCH_BOARD_LM3S6965EK
 	bool "Stellaris LM3S6965 Evaluation Kit"
 	depends on ARCH_CHIP_LM3S6965
@@ -39,6 +47,7 @@ endchoice
 
 config ARCH_BOARD
 	string
+	default "1100T"           if ARCH_BOARD_1100T
 	default "artik053"           if ARCH_BOARD_ARTIK053
 	default "lm3s6965-ek"        if ARCH_BOARD_LM3S6965EK
 	default "sidk_s5jt200"       if ARCH_BOARD_SIDK_S5JT200
@@ -167,6 +176,9 @@ comment "Board-Specific Options"
 
 if ARCH_BOARD_ARTIK053
 source arch/arm/src/artik053/Kconfig
+endif
+if ARCH_BOARD_1100T
+source arch/arm/src/1100T/Kconfig
 endif
 if ARCH_BOARD_LM3S6965EK
 source arch/arm/src/lm3s6965-ek/Kconfig

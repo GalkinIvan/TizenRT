@@ -1,0 +1,25 @@
+;------------------------------
+;  Configuring JTAG interface
+;-----------------------------
+
+SYStem.Option ResBreak OFF
+SYStem.Option WaitReset 100.ms
+SYStem.Option EnReset OFF
+SYStem.Option TRST OFF
+
+System.JtagClock 500KHz
+System.CPU CortexM0
+System.Config AXIACCESSPORT 64.
+System.Config MEMORYACCESSPORT 0x20
+System.Config AHBACCESSPORT 0x20
+System.Config COREDEBUG.Base E:0xE00FF000
+
+Sys.attach
+B.Select.Program Onchip
+
+if run()
+	break
+
+wait 0.2s
+
+enddo
