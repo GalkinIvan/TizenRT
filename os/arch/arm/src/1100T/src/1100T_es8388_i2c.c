@@ -67,16 +67,50 @@ static i2c_es i2c_es8388 = {
 
 /*This init script enables codec audio output */
 static t_codec_init_script_entry codec_reset_script[] = {
+	/* Reset, release reset*/
 	{ES8388_CONTROL1, SCPReset(1), 0},
 	{ES8388_CONTROL1, SCPReset(0), 0},
+	/*DACMCLK chip master*/
 	{ES8388_CONTROL1, SCPReset(0) | LRCM(1) | DACMCLK(1) | SameFs(1) | SeqEn(0) | EnRef(1) | VMIDSEL(0x2), 0},
+	/*All powers are normal*/
 	{ES8388_CONTROL2, LPVcmMod(0) | LPVrefBuf(0) | PdnAna(0) | PdnIbiasgen(0) | VrefrLo(0) | PdnVrefbuf(0), 0},
-	{ES8388_MASTERMODE, MSC(1) | MCLKDIV2(1) | BCLK_INV(0) | BCLKDIV(0), 0},
+	/* Master, MCLK/2, BCLK generated based on clock table*/
+	{ES8388_MASTERMODE, MSC(1) | MCLKDIV2(1) | BCLK_INV(0) | BCLKDIV(4), 0},
+	/* DACLRC and ADCLRC same, use DAC LRCK, MCLK input from PAD, */
 	{ES8388_DACCONTROL21, slrck(1)|Lrck_sel(0)|offset_dis(0)|mclk_dis(0)|Adc_dll_pwd(0)|Dac_dll_pwd(0), 0},
+	/* Keep all pwr on*/
 	{ES8388_CHIPPOWER,  adc_DigPDN(0) | dac_DigPDN(0) | adc_stm_rst(0) | dac_stm_rst(0) |  ADCDLL_PDN(0) |  DACDLL_PDN(0) |  adcVref_PDN(0) |  dacVref_PDN(0), 0},
+	/* */
 	{ES8388_ADCPOWER, PdnAINL(0) | PdnAINR(0) | PdnADCL(0) | PdnADCR(0) | PdnMICB(0) | PdnADCBiasgen(0) | flashLP(0) | int1LP(0), 0},
-	{ES8388_DACPOWER, PdnDACL(0) | PdnDACR(0) | LOUT1(0) | ROUT1(0) | LOUT2(0) | ROUT2(0), 0},
+	{ES8388_DACPOWER, PdnDACL(0) | PdnDACR(0) | LOUT1(1) | ROUT1(1) | LOUT2(1) | ROUT2(1), 0},
 
+	{ES8388_ADCCONTROL1, MicAmpL(8) | MicAmpR(8), 0},		
+	{ES8388_ADCCONTROL2, LINSEL(3) | RINSEL(3) | DSSEL(1) | DSR(0), 0},			
+	{ES8388_ADCCONTROL3, DS(1) | MONOMIX(0) | TRI(0), 0},		
+	/*ADC I2S 16 bit*/
+	{ES8388_ADCCONTROL4, DATSEL(0) | ADCLRP(0) |  ADCWL(3) |  ADCFORMAT(0), 0},
+	{ES8388_ADCCONTROL5, ADCFsMode(0) | ADCFsRatio(2), 0},
+
+	{ES8388_ADCCONTROL8, LADCVOL(0), 0}, 
+	{ES8388_ADCCONTROL9, RADCVOL(0), 0},		
+
+
+	/*DAC I2S 16 bit*/
+	{ES8388_DACCONTROL1, DACLRSWAP(0) | DACLRP(0) | DACWL(3) | DACFORMAT(0), 0},	
+	{ES8388_DACCONTROL2, DACFsMode(0) | DACFsRatio(2), 0},	
+		
+	{ES8388_DACCONTROL4, DACVolumeL(0), 0}, 		
+	{ES8388_DACCONTROL5, DACVolumeR(0), 0}, 		
+
+	{ES8388_DACCONTROL16, LMIXSEL(0) | RMIXSEL(0), 0},	
+	{ES8388_DACCONTROL17, LD2LO(1) | LI2LO(1) | LI2LOVOL(0), 0},
+	{ES8388_DACCONTROL20, RD2RO(1) | RI2RO(1) | RI2ROVOL(0), 0},		
+
+
+	{ES8388_DACCONTROL24, LOUT1VOL(0x21), 0},		
+	{ES8388_DACCONTROL25, ROUT1VOL(0x21), 0},		
+	{ES8388_DACCONTROL26, LOUT2VOL(0x21), 0},		
+	{ES8388_DACCONTROL27, ROUT2VOL(0x21), 0},		
 };
 
 /*This init script enables codec audio output */
