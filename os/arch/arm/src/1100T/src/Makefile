@@ -59,6 +59,13 @@ CSRCS = 1100T_boot.c \
 	1100T_tash.c \
 	1100T_pwm.c
 
+
+ifeq ($(CONFIG_AUDIO_ES8388),y)
+CSRCS += 1100T_es8388.c
+else ifeq ($(CONFIG_AUDIO_ES8388CHAR),y)
+CSRCS += 1100T_es8388char.c
+else
+
 ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
 ifeq ($(CONFIG_S5J_I2S),y)
 CSRCS += 1100T_i2schar.c
@@ -66,10 +73,6 @@ CSRCS += 1100T_es8388_i2c.c
 endif
 endif
 
-ifeq ($(CONFIG_AUDIO_ALC5658),y)
-CSRCS += 1100T_alc5658.c
-else ifeq ($(CONFIG_AUDIO_ALC5658CHAR),y)
-CSRCS += 1100T_alc5658char.c
 endif
 
 ifeq ($(CONFIG_MTD_PROGMEM),y)

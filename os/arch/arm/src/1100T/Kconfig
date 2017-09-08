@@ -129,4 +129,85 @@ config 1100T_RAMMTD_MOUNT_POINT
 		string "Mountpoint of the partition for ramfs r/w file system"
 		default "/ramfs"
 endif
+
+config AUDIO_ES8388CHAR
+	bool "ES8388 Character Driver (for testing and demo only)"
+	depends on I2S && AUDIO && I2C && !AUDIO_ES8388
+	---help---
+		This selection enables a simple character driver that supports ES8388 codec
+		transfers via a ioctl API.  The intent of this driver is to
+		support ES8388 codec operation.  It is not an audio driver but does conform to
+		some of the buffer management heuristics of an audio driver.  It can be used
+		as real driver application with come restrictions.
+
+if AUDIO_ES8388CHAR
+
+config AUDIO_ES8388CHAR_RXTIMEOUT
+	int "RX timeout"
+	default 0
+	---help---
+		This is a fixed timeout value that will be used for all receiver
+		transfers.  This is in units of system clock ticks (configurable).
+		The special value of zero disables RX timeouts.  Default: 0
+
+config AUDIO_ES8388CHAR_TXTIMEOUT
+	int "TX timeout"
+	default 0
+	---help---
+		This is a fixed timeout value that will be used for all transmitter
+		transfers.  This is in units of system clock ticks (configurable).
+		The special value of zero disables RX timeouts.  Default: 0
+
+endif # AUDIO_ES8388CHAR
+
+config AUDIO_ES8388
+	bool "ES8388 audio chip"
+	depends on AUDIO
+	---help---
+		Select to enable support for the ES8388 Audio codec by Realtek
+		NOTE: This driver also depends on both I2C and I2S support although
+		that dependency is not explicit here.
+
+if AUDIO_ES8388
+
+config ES8388_INITVOLUME
+	int "ES8388 initial volume setting"
+	default 250
+
+config ES8388_INFLIGHT
+	int "ES8388 maximum in-flight audio buffers"
+	default 2
+
+config ES8388_MSG_PRIO
+	int "ES8388 message priority"
+	default 1
+
+config ES8388_BUFFER_SIZE
+	int "ES8388 preferred buffer size"
+	default 8192
+
+config ES8388_NUM_BUFFERS
+	int "ES8388 preferred number of buffers"
+	default 4
+
+config ES8388_WORKER_STACKSIZE
+	int "ES8388 worker thread stack size"
+	default 768
+
+config ES8388_REGDUMP
+	bool "ES8388 register dump"
+	default n
+	---help---
+		Enable logic to dump the contents of all ES8388 registers.
+
+config ES8388_CLKDEBUG
+	bool "ES8388 clock analysis"
+	default n
+	---help---
+		Enable logic to analyze ES8388 clock configuation.
+
+endif # AUDIO_ES8388
+
+
+
 endif

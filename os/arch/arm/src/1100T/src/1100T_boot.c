@@ -221,9 +221,9 @@ void board_initialize(void)
 	/* 320MHz/13 = 24.6154 MHz of XCLKOUT0 for es8388 codec*/
 	cal_set_xclkout0(xclkout0_xiu_d_t20, 13);
 
-#if defined(CONFIG_AUDIO_es8388)
+#if defined(CONFIG_AUDIO_ES8388)
 	s5j_es8388_initialize(0);
-#elif defined(CONFIG_AUDIO_es8388CHAR)
+#elif defined(CONFIG_AUDIO_ES8388CHAR)
 	s5j_es8388char_initialize(0);
 #elif defined(CONFIG_AUDIO_I2SCHAR)
 	es8388_i2c_initialize();

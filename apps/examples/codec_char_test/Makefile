@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2017 Samsung Electronics All Rights Reserved.
+# Copyright 2016 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 #
 ###########################################################################
 ############################################################################
-# drivers/audio/Make.defs
-# These drivers support various Audio devices using the NuttX Audio
-# interface.
+# apps/examples/nxplayer/Makefile
 #
 #   Copyright (C) 2013 Ken Pettit. All rights reserved.
+#   Copyright (C) 2012-2013 Gregory Nutt. All rights reserved.
 #   Author: Ken Pettit <pettitkd@gmail.com>
+#           Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -52,38 +52,109 @@
 #
 ############################################################################
 
-# Include Audio drivers
 
-ifeq ($(CONFIG_AUDIO_DEVICES),y)
+-include $(TOPDIR)/.config
+-include $(TOPDIR)/Make.defs
+include $(APPDIR)/Make.defs
 
-ifeq ($(CONFIG_AUDIO_NULL),y)
-CSRCS += audio_null.c
+# built-in application info
+
+APPNAME = estest
+REALNAME = es_test
+THREADEXEC = TASH_EXECMD_ASYNC
+
+
+ASRCS =
+CSRCS =
+MAINSRC = codec_char_main.c
+
+AOBJS = $(ASRCS:.S=$(OBJEXT))
+COBJS = $(CSRCS:.c=$(OBJEXT))
+MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
+
+SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
+OBJS = $(AOBJS) $(COBJS)
+
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  OBJS += $(MAINOBJ)
 endif
 
-ifeq ($(CONFIG_AUDIO_I2SCHAR),y)
-CSRCS += i2schar.c
+ifeq ($(CONFIG_WINDOWS_NATIVE),y)
+  BIN = ..\..\libapps$(LIBEXT)
+else
+ifeq ($(WINTOOL),y)
+  BIN = ..\\..\\libapps$(LIBEXT)
+else
+  BIN = ../../libapps$(LIBEXT)
+endif
 endif
 
-ifeq ($(CONFIG_AUDIO_ALC5658),y)
-CSRCS += alc5658.c
+ifeq ($(WINTOOL),y)
+  INSTALL_DIR = "${shell cygpath -w $(BIN_DIR)}"
+else
+  INSTALL_DIR = $(BIN_DIR)
 endif
 
-ifeq ($(CONFIG_AUDIO_ALC5658CHAR),y)
-CSRCS += alc5658char.c
+CONFIG_EXAMPLES_ES_TEST_PROGNAME ?= es_test$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_ES_TEST_PROGNAME)
+
+ROOTDEPPATH = --dep-path .
+
+# Common build
+
+VPATH =
+
+all: .built
+.PHONY: clean depend distclean
+
+$(AOBJS): %$(OBJEXT): %.S
+	$(call ASSEMBLE, $<, $@)
+
+$(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
+	$(call COMPILE, $<, $@)
+
+.built: $(OBJS)
+	$(call ARCHIVE, $(BIN), $(OBJS))
+	@touch .built
+
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+	@echo "LD: $(PROGNAME)"
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
+	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
+
+install: $(BIN_DIR)$(DELIM)$(PROGNAME)
+
+else
+install:
+
 endif
 
-ifeq ($(CONFIG_AUDIO_ES8388),y)
-CSRCS += es8388.c
-endif
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLE_ES_TEST),yy)
+$(BUILTIN_REGISTRY)$(DELIM)$(REALNAME)_main.bdat: $(DEPCONFIG) Makefile
+	$(call REGISTER,$(APPNAME),$(REALNAME)_main,$(THREADEXEC))
 
-ifeq ($(CONFIG_AUDIO_ES8388CHAR),y)
-CSRCS += es8388char.c
-endif
+context: $(BUILTIN_REGISTRY)$(DELIM)$(REALNAME)_main.bdat
 
-
-# Include Audio driver support
-
-DEPPATH += --dep-path audio
-VPATH += :audio
+else
+context:
 
 endif
+
+.depend: Makefile $(SRCS)
+	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	@touch $@
+
+depend: .depend
+
+clean:
+	$(call DELFILE, .built)
+	$(call CLEAN)
+
+distclean: clean
+	$(call DELFILE, Make.dep)
+	$(call DELFILE, .depend)
+
+-include Make.dep
+.PHONY: preconfig
+preconfig:

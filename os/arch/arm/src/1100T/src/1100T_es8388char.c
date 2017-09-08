@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /************************************************************************************
- * arch/arm/src/artik053/src/artik053_alc5658char.c
+ * arch/arm/src/artik053/src/artik053_es8388char.c
  *
  *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -61,7 +61,7 @@
 #include <debug.h>
 #include <tinyara/clock.h>
 
-#if defined(CONFIG_AUDIO_ALC5658CHAR) && defined(CONFIG_S5J_I2S) && defined(CONFIG_S5J_I2C)
+#if defined(CONFIG_AUDIO_ES8388CHAR) && defined(CONFIG_S5J_I2S) && defined(CONFIG_S5J_I2C)
 
 #include <tinyara/i2c.h>
 
@@ -72,15 +72,15 @@
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
-#ifndef CONFIG_ALC5658_I2C_PORT
-#define CONFIG_ALC5658_I2C_PORT 1
+#ifndef CONFIG_ES8388_I2C_PORT
+#define CONFIG_ES8388_I2C_PORT 1
 #endif
 
-#define ALC5658_I2C_ADDR 0x1A
-#define ALC5658_I2C_FREQ 100000
-#define ALC5658_I2C_ADDRLEN 7
+#define ES8388_I2C_ADDR 0x11
+#define ES8388_I2C_FREQ 100000
+#define ES8388_I2C_ADDRLEN 7
 
-int alc5658char_register(FAR struct i2s_dev_s *i2s, FAR struct i2c_dev_s *i2c, FAR struct i2c_config_s *i2c_config, int minor);
+int es8388char_register(FAR struct i2s_dev_s *i2s, FAR struct i2c_dev_s *i2c, FAR struct i2c_config_s *i2c_config, int minor);
 
 /************************************************************************************
  * Private Types
@@ -90,9 +90,9 @@ int alc5658char_register(FAR struct i2s_dev_s *i2s, FAR struct i2c_dev_s *i2c, F
  * Private Data
  ************************************************************************************/
 static struct i2c_config_s g_i2c_config = {
-	.frequency = ALC5658_I2C_FREQ,
-	.address = ALC5658_I2C_ADDR,
-	.addrlen = ALC5658_I2C_ADDRLEN,
+	.frequency = ES8388_I2C_FREQ,
+	.address = ES8388_I2C_ADDR,
+	.addrlen = ES8388_I2C_ADDRLEN,
 };
 
 /************************************************************************************
@@ -104,14 +104,14 @@ static struct i2c_config_s g_i2c_config = {
  ************************************************************************************/
 
 /************************************************************************************
- * Name: s5j_alc5658char_initialize
+ * Name: s5j_es8388char_initialize
  *
  * Description:
  *   All architectures must provide the following interface in order to work with
- *   apps/examples/alc5658char_test
+ *   apps/examples/es8388char_test
  *
  ************************************************************************************/
-int s5j_alc5658char_initialize(int minor)
+int s5j_es8388char_initialize(int minor)
 {
 	static bool initialized;
 	struct i2c_dev_s *i2c;
@@ -122,7 +122,7 @@ int s5j_alc5658char_initialize(int minor)
 
 	if (!initialized) {
 
-		i2c = up_i2cinitialize(CONFIG_ALC5658_I2C_PORT);
+		i2c = up_i2cinitialize(CONFIG_ES8388_I2C_PORT);
 		if (!i2c) {
 			auddbg("ERROR: Failed to initialize CODEC I2C%d\n");
 			return -ENODEV;
@@ -135,9 +135,9 @@ int s5j_alc5658char_initialize(int minor)
 			return -ENODEV;
 		}
 
-		/* Register the ALC5658 character driver at "/dev/alc5658charN" */
+		/* Register the ES8388 character driver at "/dev/es8388charN" */
 
-		ret = alc5658char_register(i2s, i2c, &g_i2c_config, minor);
+		ret = es8388char_register(i2s, i2c, &g_i2c_config, minor);
 		if (ret < 0) {
 			auddbg("ERROR: i2schar_register failed: %d\n", ret);
 			return ret;
