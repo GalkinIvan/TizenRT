@@ -210,6 +210,8 @@
 #define AUDIO_SAMP_RATE_160K        0x0200
 #define AUDIO_SAMP_RATE_172K        0x0400
 #define AUDIO_SAMP_RATE_192K        0x0800
+#define AUDIO_SAMP_RATE_12K         0x1000
+#define AUDIO_SAMP_RATE_24K         0x2000
 
 /* Audio Sub-sampling Ratios  ***********************************************/
 

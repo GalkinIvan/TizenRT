@@ -1288,8 +1288,9 @@ static void i2s_txpdma_callback(DMA_HANDLE handle, void *arg, int result)
 
 static int i2s_checkwidth(struct s5j_i2s_s *priv, int bits)
 {
-	/* The I2S can handle most any bit width from 2 to 32.  However, the DMA
-	 * logic here is constrained to byte, half-word, and word sizes.
+	/* The I2S can handle 8, 16, or 24 bit.  
+	 * I2S handles only stereo, and minimal fufi transfer unit size
+	 * is always 32 bit. So, DMA logic here is constrained to 32bit sizes only.
 	 */
 
 	switch (bits) {
@@ -1299,7 +1300,7 @@ static int i2s_checkwidth(struct s5j_i2s_s *priv, int bits)
 	case 16:
 		break;
 
-	case 32:
+	case 24:
 		break;
 
 	default:
@@ -1343,7 +1344,7 @@ static uint32_t i2s_bitrate(struct s5j_i2s_s *priv)
 		regval = BLC_16BIT;
 		break;
 
-	case 32:
+	case 24:
 		regval = BLC_24BIT;
 		break;
 
