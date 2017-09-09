@@ -396,7 +396,7 @@ t_codec_init_script_entry codec_init_script[] = {
 	{ES8388_ADCCONTROL3, DS(1) | MONOMIX(0) | TRI(0), 0},		
 	/*ADC I2S 16 bit*/
 	{ES8388_ADCCONTROL4, DATSEL(0) | ADCLRP(0) |  ADCWL(3) |  ADCFORMAT(0), 0},
-	{ES8388_ADCCONTROL5, ADCFsMode(0) | ADCFsRatio(2), 0},
+	{ES8388_ADCCONTROL5, ADCFsMode(0) | ADCFsRatio(0), 0},
 
 	{ES8388_ADCCONTROL8, LADCVOL(0), 0}, 
 	{ES8388_ADCCONTROL9, RADCVOL(0), 0},		
@@ -404,7 +404,7 @@ t_codec_init_script_entry codec_init_script[] = {
 
 	/*DAC I2S 16 bit*/
 	{ES8388_DACCONTROL1, DACLRSWAP(0) | DACLRP(0) | DACWL(3) | DACFORMAT(0), 0},	
-	{ES8388_DACCONTROL2, DACFsMode(0) | DACFsRatio(2), 0},	
+	{ES8388_DACCONTROL2, DACFsMode(0) | DACFsRatio(0), 0},	
 		
 	{ES8388_DACCONTROL4, DACVolumeL(0), 0}, 		
 	{ES8388_DACCONTROL5, DACVolumeR(0), 0}, 		
@@ -414,10 +414,10 @@ t_codec_init_script_entry codec_init_script[] = {
 	{ES8388_DACCONTROL20, RD2RO(1) | RI2RO(1) | RI2ROVOL(0), 0},		
 
 
-	{ES8388_DACCONTROL24, LOUT1VOL((0x21 - 5)), 0},		
-	{ES8388_DACCONTROL25, ROUT1VOL((0x21 - 5)), 0},		
-	{ES8388_DACCONTROL26, LOUT2VOL((0x21 - 5)), 0},		
-	{ES8388_DACCONTROL27, ROUT2VOL((0x21 - 5)), 0},		
+	{ES8388_DACCONTROL24, LOUT1VOL((0x21 - 8)), 0},		
+	{ES8388_DACCONTROL25, ROUT1VOL((0x21 - 8)), 0},		
+	{ES8388_DACCONTROL26, LOUT2VOL((0x21 - 8)), 0},		
+	{ES8388_DACCONTROL27, ROUT2VOL((0x21 - 8)), 0},		
 };
 
 

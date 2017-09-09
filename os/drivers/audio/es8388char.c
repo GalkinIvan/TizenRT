@@ -287,6 +287,41 @@ static void es8388char_setdatawidth(FAR struct es8388char_dev_s *priv)
 
 static void es8388char_setbitrate(FAR struct es8388char_dev_s *priv)
 {
+	int FsRatio;	
+
+ 	auddbg("Dummy Try to set SampleRate: %d\n", priv->samprate);
+	
+	switch(priv->samprate) {
+
+		case AUDIO_SAMP_RATE_8K:  
+			FsRatio = 0x0A;	
+			break;		
+		case AUDIO_SAMP_RATE_12K: 
+			FsRatio = 0x07;	
+			break;		
+		case AUDIO_SAMP_RATE_16K: 
+			FsRatio = 0x06;	
+			break;		
+		case AUDIO_SAMP_RATE_24K: 
+			FsRatio = 0x04;	
+			break;		
+		case AUDIO_SAMP_RATE_32K: 
+			FsRatio = 0x03;	
+			break;		
+		case AUDIO_SAMP_RATE_48K: 
+			FsRatio = 0x02;	
+			break;		
+		case AUDIO_SAMP_RATE_96K: 
+			FsRatio = 0x00;	
+			break;		
+		default:
+	 		auddbg("Not supported sample rate");
+			return;
+	}
+
+
+	es8388char_modifyreg(priv, ES8388_ADCCONTROL5, ADCFsRatio(0xff), ADCFsRatio(FsRatio));
+	es8388char_modifyreg(priv, ES8388_DACCONTROL2, DACFsRatio(0xff), DACFsRatio(FsRatio));
 }
 
 /************************************************************************************
@@ -423,15 +458,11 @@ static int es8388char_configure(FAR struct es8388char_dev_s *priv, FAR const str
 		/* Verify that all of the requested values are supported */
 
 		ret = -ERANGE;
-		if (caps->ac_channels != 1 && caps->ac_channels != 2) {
+		if (caps->ac_channels != 2) {
 			auddbg("ERROR: Unsupported number of channels: %d\n", caps->ac_channels);
 			break;
 		}
 
-		if (caps->ac_controls.b[2] != 8 && caps->ac_controls.b[2] != 16) {
-			auddbg("ERROR: Unsupported bits per sample: %d\n", caps->ac_controls.b[2]);
-			break;
-		}
 
 		/* Save the current stream configuration */
 
@@ -439,8 +470,8 @@ static int es8388char_configure(FAR struct es8388char_dev_s *priv, FAR const str
 		priv->nchannels = caps->ac_channels;
 		priv->bpsamp = caps->ac_controls.b[2];
 
-		/* es8388char_setdatawidth(priv); */
-		/* es8388char_setbitrate(priv); */
+		es8388char_setdatawidth(priv);
+		es8388char_setbitrate(priv);
 
 		ret = OK;
 	}
