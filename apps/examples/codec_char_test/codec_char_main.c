@@ -73,7 +73,8 @@
  ****************************************************************************/
 //#define BPSMPL	1
 //#define BPSMPL	2
-#define BPSMPL	3
+unsigned int  BPSMPL = 3;
+unsigned int  T_DUR;
 
 #define BUFFSIZE (1024 * 16)
 
@@ -127,7 +128,7 @@ pthread_addr_t alcchar_receiver(pthread_addr_t arg)
 	}
 
 	/* This is example loop for only 1000 RX transactions. */
-	i = 100;
+	i = T_DUR;
 	while (i--) {
 		/* Define buffer size, if not defined 16KB buffer will be used */
 		bufdesc.numbytes = BUFFSIZE;
@@ -186,7 +187,7 @@ pthread_addr_t alcchar_transmitter(pthread_addr_t arg)
 	}
 
 	/* This is example loop for only 1000 RX transactions. */
-	i = 100;
+	i = T_DUR;
 	while (i--) {
 		/* Define APB size and allocate */
 		bufdesc.numbytes = BUFFSIZE;
@@ -198,16 +199,14 @@ pthread_addr_t alcchar_transmitter(pthread_addr_t arg)
 		bufdesc.u.pBuffer = apb;
 		apb->nbytes = apb->nmaxbytes;
 
-#if (BPSMPL == 3)
+if (BPSMPL == 3)
 		for (smpl = 0; smpl < apb->nbytes / 8; smpl++) {
 
 			*(uint32_t *)(apb->samp + smpl * 8) = lut24_sin_sample(abs_smpl*64) >> 1;
 			*(uint32_t *)(apb->samp + smpl * 8 + 4) = lut24_sin_sample(abs_smpl*167) >> 1;
 			abs_smpl ++;
 		}
-#endif
-
-#if (BPSMPL == 2)
+if (BPSMPL == 2)
 		for (smpl = 0; smpl < apb->nbytes / 4; smpl++) {
 
 			*(uint16_t *)(apb->samp + smpl * 4) = lut24_sin_sample(abs_smpl*64) >> 9;
@@ -215,16 +214,13 @@ pthread_addr_t alcchar_transmitter(pthread_addr_t arg)
 			abs_smpl ++;
 
 		}
-#endif
-
-#if (BPSMPL == 1)
+if (BPSMPL == 1)
 		for (smpl = 0; smpl < apb->nbytes / 4; smpl++) {
 
 			*(uint8_t *)(apb->samp + smpl * 4) = lut24_sin_sample(abs_smpl*64) >> 17;
 			*(uint8_t *)(apb->samp + smpl * 4 + 2) = lut24_sin_sample(abs_smpl*167) >> 17;
 			abs_smpl ++;
 		}
-#endif
 
 		/* Enqueue buffer to be sent */
 		ioctl(fd, AUDIOIOC_ENQUEUEBUFFER, (unsigned long)&bufdesc);
@@ -248,6 +244,7 @@ int es_test_main(int argc, char *argv[])
 	pthread_addr_t result;
 	pthread_t transmitter;
 	pthread_t receiver;
+	int s_rate, s_size;
 	int ret;
 
 	int fd;
@@ -264,95 +261,132 @@ int es_test_main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	printf("HELLO!!! ALC_TEST\n");
+	printf("HELLO!!! CODEC_TEST\n");
 
-	/* Input will be the same since it is the same I2S channel */
-	caps.ac_len = sizeof(struct audio_caps_s);
-	caps.ac_type = AUDIO_TYPE_OUTPUT;
-	caps.ac_channels = 2;
+	for(s_rate = 0; s_rate < 7; s_rate ++)
+	for(s_size = 1; s_size < 4; s_size ++) {
+		BPSMPL = s_size;
+	
+		/* Input will be the same since it is the same I2S channel */
+		caps.ac_len = sizeof(struct audio_caps_s);
+		caps.ac_type = AUDIO_TYPE_OUTPUT;
+		caps.ac_channels = 2;
+	
+		caps.ac_controls.hw[0] = AUDIO_SAMP_RATE_96K;
+	
+		T_DUR = 20 * (s_rate + 1);	
+		switch(s_rate) {
+		case 0:
+			caps.ac_controls.hw[0] = AUDIO_SAMP_RATE_8K;
+			printf("Rate 8K, Size %d \n", BPSMPL);
+		break;
+		case 1:
+			caps.ac_controls.hw[0] = AUDIO_SAMP_RATE_12K;
+			printf("Rate 12K, Size %d \n", BPSMPL);
+		break;
+		case 2:
+			caps.ac_controls.hw[0] = AUDIO_SAMP_RATE_16K;
+			printf("Rate 16K, Size %d \n", BPSMPL);
+		break;
+		case 3:
+			caps.ac_controls.hw[0] = AUDIO_SAMP_RATE_24K;
+			printf("Rate 24K, Size %d \n", BPSMPL);
+		break;
+		case 4:
+			caps.ac_controls.hw[0] = AUDIO_SAMP_RATE_32K;
+			printf("Rate 32K, Size %d \n", BPSMPL);
+		break;
+		case 5:
+			caps.ac_controls.hw[0] = AUDIO_SAMP_RATE_48K;
+			printf("Rate 48K, Size %d \n", BPSMPL);
+		break;
+		case 6:
+			caps.ac_controls.hw[0] = AUDIO_SAMP_RATE_96K;
+		printf("Rate 96K, Size %d \n", BPSMPL);
+		break;
+		}	
+		
+		caps.ac_controls.b[2] = 8 * BPSMPL;
+        	
+		ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
+        	
+		/* Here we have to diverge on 3 threads - RX and TX and main*/
+        	
+		sched_lock();
+		printf("codec_char_main: Start receiver thread\n");
+		pthread_attr_init(&attr);
+        	
+		/* Set the receiver stack size */
+		(void)pthread_attr_setstacksize(&attr, CONFIG_EXAMPLES_ALCCHAR_RXSTACKSIZE);
+        	
+		/* Start the receiver */
+        	
+		ret = pthread_create(&receiver, &attr, alcchar_receiver, NULL);
+		if (ret != OK) {
+			sched_unlock();
+			printf("codec_char_main: ERROR: failed to Start receiver thread: %d\n", ret);
+			return EXIT_FAILURE;
+		}
+        	
+		pthread_setname_np(receiver, "receiver");
+        	
+		/* Start the transmitter thread */
+		printf("codec_char_main: Start transmitter thread\n");
+		pthread_attr_init(&attr);
+        	
+		/* Set the transmitter stack size */
+		(void)pthread_attr_setstacksize(&attr, CONFIG_EXAMPLES_ALCCHAR_TXSTACKSIZE);
+        	
+		ret = pthread_create(&transmitter, &attr, alcchar_transmitter, NULL);
+		if (ret != OK) {
+			sched_unlock();
+			printf("codec_char_main: ERROR: failed to Start transmitter thread: %d\n", ret);
+			printf("codec_char_main: Waiting for the receiver thread\n");
+			(void)pthread_join(receiver, &result);
+			return EXIT_FAILURE;
+		}
 
-	caps.ac_controls.hw[0] = AUDIO_SAMP_RATE_48K;
-	caps.ac_controls.b[2] = 8 * BPSMPL;
-
-	ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
-
-	/* Here we have to diverge on 3 threads - RX and TX and main*/
-
-	sched_lock();
-	printf("alcchar_main: Start receiver thread\n");
-	pthread_attr_init(&attr);
-
-	/* Set the receiver stack size */
-	(void)pthread_attr_setstacksize(&attr, CONFIG_EXAMPLES_ALCCHAR_RXSTACKSIZE);
-
-	/* Start the receiver */
-
-	ret = pthread_create(&receiver, &attr, alcchar_receiver, NULL);
-	if (ret != OK) {
+		pthread_setname_np(transmitter, "transmitter");
 		sched_unlock();
-		printf("alcchar_main: ERROR: failed to Start receiver thread: %d\n", ret);
-		return EXIT_FAILURE;
-	}
-
-	pthread_setname_np(receiver, "receiver");
-
-	/* Start the transmitter thread */
-	printf("alcchar_main: Start transmitter thread\n");
-	pthread_attr_init(&attr);
-
-	/* Set the transmitter stack size */
-	(void)pthread_attr_setstacksize(&attr, CONFIG_EXAMPLES_ALCCHAR_TXSTACKSIZE);
-
-	ret = pthread_create(&transmitter, &attr, alcchar_transmitter, NULL);
-	if (ret != OK) {
-		sched_unlock();
-		printf("alcchar_main: ERROR: failed to Start transmitter thread: %d\n", ret);
-		printf("alcchar_main: Waiting for the receiver thread\n");
-		(void)pthread_join(receiver, &result);
-		return EXIT_FAILURE;
-	}
-
-	pthread_setname_np(transmitter, "transmitter");
-	sched_unlock();
-
-	ioctl(fd, AUDIOIOC_START, 0);
-
-	/* Set Volume */
-	caps.ac_type = AUDIO_TYPE_FEATURE;
-
-	caps.ac_format.hw = AUDIO_FU_VOLUME;
-	caps.ac_controls.hw[0] = 800;
-	ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
-
-	caps.ac_format.hw = AUDIO_FU_MUTE;
-	caps.ac_controls.b[0] = false;
-	ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
-
-	caps.ac_format.hw = AUDIO_FU_BALANCE;
-	caps.ac_controls.hw[0] = -500;
-	ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
-
-	/* Values -16 ~ 0 ~ 53 equal to -12dB ~ 0dB ~ 39.75 */
-	caps.ac_format.hw = AUDIO_FU_MICGAIN;
-	caps.ac_controls.hw[0] = 0;
-	ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
-
-
-	printf("alcchar_main: Waiting for the transmitter thread\n");
-	ret = pthread_join(transmitter, &result);
-	if (ret != OK) {
-		printf("alcchar_main: ERROR: pthread_join failed: %d\n", ret);
-	}
-
-	printf("alcchar_main: Waiting for the receiver thread\n");
-	ret = pthread_join(receiver, &result);
-	if (ret != OK) {
-		printf("alcchar_main: ERROR: pthread_join failed: %d\n", ret);
-	}
-
+        	
+		ioctl(fd, AUDIOIOC_START, 0);
+        	
+		/* Set Volume */
+		caps.ac_type = AUDIO_TYPE_FEATURE;
+        	
+		caps.ac_format.hw = AUDIO_FU_VOLUME;
+		caps.ac_controls.hw[0] = 800;
+		ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
+        	
+		caps.ac_format.hw = AUDIO_FU_MUTE;
+		caps.ac_controls.b[0] = false;
+		ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
+        	
+		caps.ac_format.hw = AUDIO_FU_BALANCE;
+		caps.ac_controls.hw[0] = -500;
+		ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
+        	
+		/* Values -16 ~ 0 ~ 53 equal to -12dB ~ 0dB ~ 39.75 */
+		caps.ac_format.hw = AUDIO_FU_MICGAIN;
+		caps.ac_controls.hw[0] = 0;
+		ret = ioctl(fd, AUDIOIOC_CONFIGURE, &caps);
+        	
+        	
+		printf("codec_char_main: Waiting for the transmitter thread\n");
+		ret = pthread_join(transmitter, &result);
+		if (ret != OK) {
+			printf("codec_char_main: ERROR: pthread_join failed: %d\n", ret);
+		}
+        	
+		printf("codec_char_main: Waiting for the receiver thread\n");
+		ret = pthread_join(receiver, &result);
+		if (ret != OK) {
+			printf("codec_char_main: ERROR: pthread_join failed: %d\n", ret);
+		}
+	}       	
 	ioctl(fd, AUDIOIOC_STOP, 0);
 	close(fd);
-
+       	
 	return EXIT_SUCCESS;
 }
 

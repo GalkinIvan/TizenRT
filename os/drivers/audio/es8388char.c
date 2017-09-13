@@ -265,6 +265,7 @@ static void es8388char_i2c_script(FAR struct es8388char_dev_s *priv, t_codec_ini
 	}
 }
 
+
 /****************************************************************************
  * Name: es8388char_setdatawidth
  *
@@ -320,8 +321,11 @@ static void es8388char_setbitrate(FAR struct es8388char_dev_s *priv)
 	}
 
 
-	es8388char_modifyreg(priv, ES8388_ADCCONTROL5, ADCFsRatio(0xff), ADCFsRatio(FsRatio));
-	es8388char_modifyreg(priv, ES8388_DACCONTROL2, DACFsRatio(0xff), DACFsRatio(FsRatio));
+	/* Init codec here */
+	es8388char_i2c_script(priv, codec_init_script, sizeof(codec_init_script) / sizeof(t_codec_init_script_entry));
+	es8388char_modifyreg(priv, ES8388_ADCCONTROL5, 0xff, ADCFsRatio(FsRatio));
+	es8388char_modifyreg(priv, ES8388_DACCONTROL2, 0xff, DACFsRatio(FsRatio));
+	es8388char_modifyreg(priv, ES8388_CHIPPOWER, 0xff, 0);
 }
 
 /************************************************************************************
@@ -496,10 +500,10 @@ static int es8388char_start(FAR struct es8388char_dev_s *priv, FAR const struct 
 {
 	int ret = OK;
 
-	es8388char_setdatawidth(priv);
+//	es8388char_setdatawidth(priv);
 
 	/* Init codec here only for debugging purposes. Remove later. */
-	es8388char_i2c_script(priv, codec_init_script, sizeof(codec_init_script) / sizeof(t_codec_init_script_entry));
+//	es8388char_i2c_script(priv, codec_init_script, sizeof(codec_init_script) / sizeof(t_codec_init_script_entry));
 
 
 	return ret;
@@ -820,8 +824,7 @@ int es8388char_register(FAR struct i2s_dev_s *i2s, FAR struct i2c_dev_s *i2c, FA
 			kmm_free(priv);
 		}
 
-		/* Init codec here only once */
-		es8388char_i2c_script(priv, codec_init_script, sizeof(codec_init_script) / sizeof(t_codec_init_script_entry));
+		/* Init codec by IOCTL call later, with required options */
 
 		/* Return the result of the registration */
 
